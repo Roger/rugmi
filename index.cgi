@@ -3,6 +3,8 @@
 import os
 import cgi
 import hashlib
+import shutil
+import tempfile
 
 from string import Template
 from ConfigParser import ConfigParser
@@ -25,11 +27,6 @@ def response(string, **kwargs):
     print "Content-Type: text/html"
     print
     print Template(string).substitute(kwargs)
-
-def hash(data):
-    string = hashlib.md5(data).digest().encode("base64")[:5]
-    string = string.replace("/", "_").replace("+", "-")
-    return string
 
 def redirect(location):
     print "Status: 301 Moved",
@@ -58,19 +55,30 @@ def parse_form():
         return
     filefield = form["file"]
 
-    data = filefield.value
+    strhash = hashlib.md5()
+
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    while True:
+        part = filefield.file.read(128)
+        if not part:
+            break
+        strhash.update(part)
+        temp.write(part)
+    temp.close()
+
     if filefield.done == -1:
         internal_error("upload aborted")
         return
 
-    strhash = hash(data)
+    filename = strhash.digest().encode("base64")[:5]
+    filename = filename.replace("/", "_").replace("+", "-")
+
     if "." in filefield.filename:
-        strhash += "." + filefield.filename.rsplit(".", 1)[1]
+        filename += "." + filefield.filename.rsplit(".", 1)[1]
 
-    with open(store_path + "/%s" % strhash, "w") as fd:
-        fd.write(data)
+    shutil.move(temp.name, store_path + "/%s" % filename)
 
-    response("%s/%s" % (url, strhash))
+    response("%s/%s" % (url, filename))
 
 def index():
     response("""
