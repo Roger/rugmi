@@ -1,0 +1,4 @@
+[server]
+url = http://example.org/d
+store_path = /srv/www/rugmi/d/
+keys = keya, keyb, keyc
