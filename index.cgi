@@ -16,12 +16,15 @@ from ConfigParser import ConfigParser
 #cgitb.enable(display=0, logdir="logs")
 
 config = ConfigParser()
-config.read("/etc/rugmi.conf")
+config.read([
+    os.path.expanduser(os.environ.get('RUGMI_CONF', '~/.rugmi.conf')),
+    "/etc/rugmi.conf",
+])
 
 # get config
 keys = map(lambda a: a.strip(), config.get("server", "keys").split(","))
-url = config.get("server", "url")
-store_path = config.get("server", "store_path")
+url = config.get("server", "url").rstrip("/")
+store_path = config.get("server", "store_path").rstrip("/")
 
 def response(string, **kwargs):
     print "Content-Type: text/html"
@@ -30,13 +33,13 @@ def response(string, **kwargs):
 
 def redirect(location):
     print "Status: 301 Moved",
-    print "Location:%s" % location
+    print "Location: %s" % location
     print
 
-def unautorized():
+def unauthorized():
     print "Status: 401 Unautorized"
     print
-    print "Unautorized Man"
+    print "Unauthorized, man"
 
 def internal_error(error):
     print "Status: 500"
@@ -47,7 +50,7 @@ def parse_form():
     form = cgi.FieldStorage()
     key = form.getfirst("key", None)
     if key not in keys:
-        unautorized()
+        unauthorized()
         return
 
     if not form.getfirst("file", None):
@@ -76,7 +79,11 @@ def parse_form():
     if "." in filefield.filename:
         filename += "." + filefield.filename.rsplit(".", 1)[1]
 
-    shutil.move(temp.name, store_path + "/%s" % filename)
+    try:
+        shutil.move(temp.name, store_path + "/%s" % filename)
+    except IOError, e:
+        internal_error("Error saving: %s" % e)
+        return
 
     response("%s/%s" % (url, filename))
 
