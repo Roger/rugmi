@@ -8,12 +8,15 @@ Does some basic dependency tracking with extremely basic python parsing.
 USAGE = """Usage: {0} <output file> <plugins or presets>
 Examples:
     {0} output.py config core parse_form index routing main
-    {0} output.py DEFAULTS
-    {0} output.py DEFAULTS -index
+    {0} output.py DEFAULTS_WSGI
+    {0} output.py DEFAULTS_CGI
+    {0} output.py DEFAULTS_CGI -index
 """
 
 PRESETS = {
-    'DEFAULTS': "config core parse_form index routing main",
+    'DEFAULTS_WSGI': "config core routing parse_form urlfor index main",
+    'DEFAULTS_CGI':  "config core routing parse_form "
+            "urlfor_cgi index fix_path_info main"
 }
 
 HEADER = """#!/usr/bin/env python
