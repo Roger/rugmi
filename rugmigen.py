@@ -14,9 +14,10 @@ Examples:
 """
 
 PRESETS = {
-    'DEFAULTS_WSGI': "config core routing parse_form urlfor index main",
-    'DEFAULTS_CGI':  "config core routing parse_form "
-            "urlfor_cgi index fix_path_info main"
+    'DEFAULTS_WSGI': " config core routing urlfor template index parse_form "
+            "listfiles main",
+    'DEFAULTS_CGI':  "config core routing parse_form template "
+            "urlfor_cgi index parse_form listfiles fix_path_info main"
 }
 
 HEADER = """#!/usr/bin/env python
