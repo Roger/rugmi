@@ -1,3 +1,7 @@
+from rugmi.plugins.routing import route
+from rugmi.plugins.urlfor import url_for
+
+@route("/")
 @response
 def index(environ, start_response):
     return b"""

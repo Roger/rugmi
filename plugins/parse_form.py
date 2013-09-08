@@ -5,7 +5,9 @@ import tempfile
 from rugmi.plugins.core import response, errorable
 from rugmi.plugins.core import UnauthorizedError, InternalError
 from rugmi.plugins.config import keys, store_path, url
+from rugmi.plugins.routing import route
 
+@route("/", methods=["POST"])
 @response
 def parse_form(environ, start_response):
     form = environ["rugmi.form"]

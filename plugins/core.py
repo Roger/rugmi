@@ -1,6 +1,8 @@
 import cgi
 from functools import wraps
 
+wsgi_wrappers = []
+
 # Errors
 
 class UnauthorizedError(Exception):
