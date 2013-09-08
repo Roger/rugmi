@@ -78,12 +78,14 @@ def parse_plugin(filename):
         line = line.rstrip()
 
         skip = False
-
+        provides_string = "# rugmi: provides:"
         # this line is probably an import! probably.
         if line.startswith("import ") or line.startswith("from "):
             skip = check_import(line, tracker)
 
-        # TODO: check "provides" here
+        elif line.startswith(provides_string):
+            skip = True
+            provides = line[len(provides_string):].strip()
 
         if not skip:
             code.append(line)
