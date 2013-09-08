@@ -2,18 +2,16 @@ import base64
 import shutil
 import hashlib
 import tempfile
-from rugmi.plugins.core import response, errorable
-from rugmi.plugins.core import UnauthorizedError, InternalError
+from rugmi.plugins.core import response, errorable, authenticate
+from rugmi.plugins.core import InternalError
 from rugmi.plugins.config import keys, store_path, url
 from rugmi.plugins.routing import route
 
 @route("/", methods=["POST"])
+@authenticate
 @response
 def parse_form(environ, start_response):
     form = environ["rugmi.form"]
-    key = form.getfirst("key", None)
-    if key not in keys:
-        raise UnauthorizedError
 
     if not form.getfirst("file", None):
         raise InternalError(b"Needs a file!")

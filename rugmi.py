@@ -5,8 +5,8 @@
 import os
 import re
 import cgi
-import base64
 import shutil
+import base64
 import hashlib
 import tempfile
 import itertools
@@ -45,6 +45,16 @@ class NotFoundError(Exception):
 
 # Helpers
 
+def authenticate(func):
+    @wraps(func)
+    def wrapper(environ, start_response):
+        form = environ["rugmi.form"]
+        key = form.getfirst("key", None)
+        if key not in keys:
+            raise UnauthorizedError
+        return func(environ, start_response)
+    return wrapper
+
 def errorable(error):
     error_str = b""
     for e in error.args:
@@ -53,8 +63,8 @@ def errorable(error):
         error_str += b" " + e
     return error_str
 
-def response(func):
-    @wraps(func)
+def env_form(application):
+    @wraps(application)
     def wrapper(environ, start_response):
         if environ["REQUEST_METHOD"] == "POST":
             if environ.get("wsgi.version", None):
@@ -68,13 +78,16 @@ def response(func):
             else:
                 form = cgi.FieldStorage()
             environ["rugmi.form"] = form
+        return application(environ, start_response)
+    return wrapper
 
+wsgi_wrappers.append(env_form)
+
+def handle_errors(application):
+    @wraps(application)
+    def wrapper(environ, start_response):
         try:
-            data = func(environ, start_response)
-            content_type = "text/html"
-            if type(data) is tuple:
-                data, content_type = data
-            start_response('200 OK', [('Content-Type', content_type)])
+            return application(environ, start_response)
         except UnauthorizedError as error:
             start_response('401 Unauthorized',
                     [('Content-Type', 'text/plain')])
@@ -93,6 +106,18 @@ def response(func):
             if debug:
                 data += b"\n\n"
                 data += errorable(error)
+        return [data]
+    return wrapper
+wsgi_wrappers.append(handle_errors)
+
+def response(func):
+    @wraps(func)
+    def wrapper(environ, start_response):
+        data = func(environ, start_response)
+        content_type = "text/html"
+        if type(data) is tuple:
+            data, content_type = data
+        start_response('200 OK', [('Content-Type', content_type)])
         return [data]
     return wrapper
 
@@ -189,12 +214,10 @@ def application(environ, start_response):
     return not_found(environ, start_response)
 
 @route("/", methods=["POST"])
+@authenticate
 @response
 def parse_form(environ, start_response):
     form = environ["rugmi.form"]
-    key = form.getfirst("key", None)
-    if key not in keys:
-        raise UnauthorizedError
 
     if not form.getfirst("file", None):
         raise InternalError(b"Needs a file!")
