@@ -21,7 +21,7 @@ def parse_form(environ, start_response):
     extension = None
     if "." in filefield.filename:
         extension = filefield.filename.rsplit(".", 1)[1].encode("utf8")
-        if not extension.isalpha():
+        if not extension.isalnum():
             raise InternalError("Invalid Extension")
 
     strhash = hashlib.md5()
